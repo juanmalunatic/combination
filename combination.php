@@ -17,6 +17,7 @@ define('COMBINATION_PLUGIN_DIR', plugin_dir_path(__FILE__));
 
 require_once COMBINATION_PLUGIN_DIR . 'functions.php';
 require_once COMBINATION_PLUGIN_DIR . 'combination_list_table.php';
+require_once COMBINATION_PLUGIN_DIR . 'combination_manager.php';
 
 global $is_combination_deleted;
 $is_combination_deleted	= false;
@@ -139,88 +140,15 @@ class Custom_Combination {
 	*/
 	
 	public function combination_sub_menu_add() {
-
-	    add_submenu_page(
-	        'edit.php?post_type=combination',
-            'Match Combination IDs',
-            'Match Combination IDs',
-            'administrator',
-            'import_combination_ids',
-            [$this, 'page_import_combination_ids']
-        );
-
-		add_submenu_page( 'edit.php?post_type=combination', 'Import Category','Import category', 'administrator', 'category_imports', array( $this, 'category_imports_page' ) );		add_submenu_page( 'edit.php?post_type=combination', 'Import Collection', 'Import collection', 'administrator', 'collection_imports', array( $this, 'collection_imports_page' ) );
+	    add_submenu_page( 'edit.php?post_type=combination', 'Import Category','Import category', 'administrator', 'category_imports', array( $this, 'category_imports_page' ) );		add_submenu_page( 'edit.php?post_type=combination', 'Import Collection', 'Import collection', 'administrator', 'collection_imports', array( $this, 'collection_imports_page' ) );
 		add_submenu_page( 'edit.php?post_type=combination', 'Import Model', 'Import model', 'administrator', 'model_imports', array( $this, 'model_imports_page' ) );
 		add_submenu_page( 'edit.php?post_type=combination', 'Import Combination', 'Import combination', 'administrator', 'combination_imports', array( $this, 'combination_imports_page' ) );
+
+		// New pages
+        $cm = new Combination_Manager();
+        $cm->submenu_add_pages_cm();
 	}
 
-	function page_import_combination_ids () {
-
-        $is_imported		= false;
-        $is_import_error	= false;
-
-        if( isset( $_POST['import_combinations'] ) && $_POST['import_combinations'] != '' ) {
-
-            if( $_FILES['import_combinations_file'] && $_FILES['import_combinations_file']['error'] == 0 ) {
-
-                $collection_import_file	= $_FILES['import_combinations_file']['tmp_name'];
-
-                set_time_limit( 0 );
-                ini_set( 'memory_limit', '2048M' );
-                ini_set( 'post_max_size', '200M' );
-                ini_set( 'upload_max_filesize', '200M' );
-                ini_set( 'max_allowed_packet', '200M' );
-                defined( 'WP_MEMORY_LIMIT' ) || define( 'WP_MEMORY_LIMIT', '2048M' );
-
-                $this->search_combination_posts_and_update_combination_ids( $collection_import_file );
-                $is_imported	= true;
-            } else {
-                $is_import_error	= false;
-            }
-        }
-        ?>
-        <div class="wrap">
-
-            <?php if( $is_imported ){ ?>
-                <div class="updated settings-error notice is-dismissible" style="margin: 0 0 20px; max-width: 845px;">
-                    <p><strong>CSV Imported successfully.</strong></p>
-                    <button class="notice-dismiss" type="button">
-                        <span class="screen-reader-text">Dismiss this notice.</span>
-                    </button>
-                </div>
-            <?php } ?>
-
-            <?php if( $is_import_error ){ ?>
-                <div class="updated settings-error notice is-dismissible" style="margin: 0 0 20px; max-width: 845px;">
-                    <p><strong>CSV Imported not imported please check csv file and format.</strong></p>
-                    <button class="notice-dismiss" type="button">
-                        <span class="screen-reader-text">Dismiss this notice.</span>
-                    </button>
-                </div>
-            <?php } ?>
-
-            <h1>Combination IDs Import</h1>
-
-            <form method="post" enctype="multipart/form-data">
-                <h1></h1>
-                <input type="hidden" name="import_combinations" value="1" />
-                <table class="form-table">
-
-                    <tr>
-                        <th scope="row"><label for="import_combinations_file">Upload CSV</label></th>
-                        <td><input type="file" name="import_combinations_file" id="import_combinations_file" accept=".csv" required /></td>
-                    </tr>
-
-                </table>
-
-                <p class="submit"><input type="submit" name="import_combinations" id="submit" class="button button-primary" value="Save Changes"></p>
-            </form>
-
-        </div>
-
-        <?php
-    }
-	
 	function collection_imports_page() { 
 	
 		$is_imported		= false;
@@ -3011,7 +2939,7 @@ class Custom_Combination {
 				}				 					
 			} else {
 				$this->_ilog( 'new combination_post_id error' );
-				$this->_ilog( $new_term->get_error_messages() );
+				//$this->_ilog( $new_term->get_error_messages() );
 			}
 			
 			$this->_log( 'cron_last_imported_id: ' . $cron_last_imported_id . ' Imported' );			
@@ -3178,7 +3106,7 @@ class Custom_Combination {
 	}
 	
 	public function _dlog( $msg = "" ) {
-		$msg	= ( is_array( $msg ) || is_object( $msg ) ) ? print_r( $msg, 1 ) : $msg;		 	
+		$msg	= ( is_array( $msg ) || is_object( $msg ) ) ? print_r( $msg, 1 ) : $msg;
 		error_log( date('[Y-m-d H:i:s e] ') . $msg . PHP_EOL, 3, __DIR__ . "/delete.log" );
 	}
 
@@ -3193,110 +3121,6 @@ class Custom_Combination {
 		error_log( date('[Y-m-d H:i:s e] ') . $msg . PHP_EOL, 3, __DIR__ . "/cron.log" );
 	}
 
-    public function search_combination_posts_and_update_combination_ids ($csv_file = array()) {
-        
-	     wp_cache_flush();
-
-        $handle = fopen($csv_file, 'r');
-        $i 		= 0;
-
-        while ( ( $data = fgetcsv( $handle ) ) !== FALSE ) {
-
-            $i++;
-
-            // Skip header row
-            if ($i == 1) {
-                continue;
-            }
-            
-            // Skip empty rows
-            if (!$data) {
-                continue;
-            }
-
-            // Order is hard-coded
-            $combination_id  = $data[0];
-            $category	     = $data[1];
-            $collection	     = $data[2];
-            $model		     = $data[3];
-            $variant	     = $data[4];
-            $variant	     = trim( $variant ) ? $variant : 'No Variant';
-            $finish		     = $data[5];
-            $color		     = $data[6];
-            
-            // Fetch the custom taxonomies/terms combos
-            $category_term = term_exists($category, 'combination_category');
-            $category_id = $category_term ? intval($category_term['term_id']) : false;
-            $category_term_taxonomy_id = $category_term ? intval($category_term['term_taxonomy_id']) : false;
-
-            $collection_term = term_exists($collection, 'combination_category', $category_id);
-            $collection_id = $collection_term ? intval($collection_term['term_id']) : false;
-            $collection_term_taxonomy_id = $collection_term ? intval($collection_term['term_taxonomy_id']) : false;
-
-            $model_term = term_exists($model, 'combination_category', $collection_id);
-            $model_id = $model_term ? intval($model_term['term_id']) : false;
-            $model_term_taxonomy_id = $model_term ? intval($model_term['term_taxonomy_id']) : false;
-
-            $variant_term = term_exists($variant, 'combination_category', $model_id);
-            $variant_id = $variant_term ? intval($variant_term['term_id']) : false;
-            $variant_term_taxonomy_id = $variant_term ? intval($variant_term['term_taxonomy_id']) : false;
-
-            $finish_term = term_exists($finish, 'combination_category', $variant_id);
-            $finish_id = $finish_term ? intval($finish_term['term_id']) : false;
-            $finish_term_taxonomy_id = $finish_term ? intval($finish_term['term_taxonomy_id']) : false;
-
-            $color_term = term_exists($color, 'combination_category', $finish_id);
-            $color_id = $color_term ? intval($color_term['term_id']) : false;
-            $color_term_taxonomy_id = $color_term ? intval($color_term['term_taxonomy_id']) : false;
-
-            $combination_search = get_posts([
-                'post_status' => 'publish',
-                'post_type' => 'combination',
-                'tax_query' => [
-                    'relation' => 'AND',
-                    [
-                        'taxonomy' => 'combination_category',
-                        'field' => 'term_id',
-                        'terms' => intval($collection_id),
-                    ],
-                    [
-                        'taxonomy' => 'combination_category',
-                        'field' => 'term_id',
-                        'terms' => intval($model_id),
-                    ],
-                    [
-                        'taxonomy' => 'combination_category',
-                        'field' => 'term_id',
-                        'terms' => intval($variant_id),
-                    ],
-                    [
-                        'taxonomy' => 'combination_category',
-                        'field' => 'term_id',
-                        'terms' => intval($finish_id),
-                    ],
-                    [
-                        'taxonomy' => 'combination_category',
-                        'field' => 'term_id',
-                        'terms' => intval($color_id),
-                    ],
-                ],
-            ]);
-
-            // If nothing is found, we skip the row
-            $posts_found = count($combination_search);
-
-            if ($posts_found !== 0) {
-                // If there are exact duplicates in the CSV they will be assigned the same ID ($posts_found > 1)
-                // If two posts have the same exact content, one will be left behind.
-                $post = $combination_search[0];
-                update_post_meta($post->ID, '_combination_id', $combination_id);
-            }
-
-            // Debug section
-            $lmao = get_post_meta($post->ID, '_combination_id');
-            $a = "b";
-        } // end while looping through rows
-    }
 }
 
 endif;
