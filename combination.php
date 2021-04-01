@@ -66,8 +66,15 @@ class Custom_Combination {
 	   
 	   add_action( 'wp_loaded', array( $this, 'maybe_cron_import_page' ) );
 	    
-		add_action( 'wp_loaded', array( $this, 'maybe_cron_delete_page' ) );		
+	   add_action( 'wp_loaded', array( $this, 'maybe_cron_delete_page' ) );
+
+	   add_action( 'add_meta_boxes', [$this, 'combination_metaboxes'] );
 	}
+
+	public function combination_metaboxes() {
+        $cm = new Combination_Manager();
+        $cm->add_metabox_edit_post();
+    }
 		
 	public function combination_scripts() {
 		wp_enqueue_style( 'combination', COMBINATION_PLUGIN_URL . 'css/combination.css' );

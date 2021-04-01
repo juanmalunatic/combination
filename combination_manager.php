@@ -141,6 +141,26 @@ if (!class_exists('Combination_Manager')) :
             }
         }
 
+
+        public function add_metabox_edit_post()
+        {
+            // add_meta_box(
+            //     'combination-post-metabox',
+            //     'Combination Information',
+            //     [$this, 'add_metabox_edit_post_content'],
+            //     ['post', 'combination'],
+            //     'advanced',
+            //     'default',
+            //     null
+            // );
+        }
+
+        public function add_metabox_edit_post_content()
+        {
+            $post_id = get_the_ID();
+            echo "Hello {$post_id} :)" ;
+        }
+
         public function submenu_add_pages_cm()
         {
             // Update combination IDs
