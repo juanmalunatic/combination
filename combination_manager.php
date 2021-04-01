@@ -5,6 +5,8 @@ define('COMBINATION_PLUGIN_DIR', plugin_dir_path(__FILE__));
 
 require_once COMBINATION_PLUGIN_DIR . 'combination_item.php';
 
+// Meta key: _combination_id
+
 if (!class_exists('Combination_Manager')) :
 
     class Combination_Manager
@@ -13,15 +15,43 @@ if (!class_exists('Combination_Manager')) :
         {
         }
 
-        public function _log_ci($msg = "")
+        public function import_combinations($csv_file = [])
         {
-            $msg = (is_array($msg) || is_object($msg)) ? print_r($msg, 1) : $msg;
-            error_log(date('[Y-m-d H:i:s e] ') . $msg . PHP_EOL, 3, __DIR__ . "/ci.log");
+            wp_cache_flush();
+
+            $handle = fopen($csv_file, 'r');
+            $i = 0;
+
+            while (($data = fgetcsv($handle)) !== FALSE) {
+
+                $i++;
+
+                if ($i == 1) continue; // Skip header row
+
+                if (!$data) continue;  // Skip empty rows
+
+                // Create the item based on the CSV
+                $combination_item = new Combination_Item($data);
+
+                // Look for the post associated with said item
+                $posts = get_posts([
+                    'post_status' => 'publish',
+                    'post_type'   => 'combination',
+                    'meta_key'    => '_combination_id',
+                    'meta_value'  => $combination_item->combination_id,
+                ]);
+
+                $posts_count = count($posts);
+                $a = "b";
+
+                if($posts_count === 0) {
+                    $this->create_combination($combination_item);
+                } else {
+                    $this->update_combination($posts[0], $combination_item);
+                }
+            }
         }
 
-        public function import_combinations($csv_file = []) {
-
-        }
 
         public function update_combination_ids($csv_file = [])
         {
@@ -131,7 +161,7 @@ if (!class_exists('Combination_Manager')) :
                 'Update CIDs',
                 'administrator',
                 'import_combination_ids',
-                [$this, 'page_import_combination_ids']
+                [$this, 'page_update_combination_ids']
             );
 
             // Update any existing value / category
@@ -146,7 +176,7 @@ if (!class_exists('Combination_Manager')) :
 
         }
 
-        function page_import_combinations()
+        public function page_import_combinations()
         {
 
             $is_imported = false;
@@ -217,14 +247,14 @@ if (!class_exists('Combination_Manager')) :
             <?php
         }
 
-        function page_update_terms()
+        public function page_update_terms()
         {
             ?>
             Hello :)
             <?php
         }
 
-        function page_import_combination_ids()
+        public function page_update_combination_ids()
         {
 
             $is_imported = false;
@@ -273,7 +303,7 @@ if (!class_exists('Combination_Manager')) :
                     </div>
                 <?php } ?>
 
-                <h1>Combination IDs Import</h1>
+                <h1>Update Combination IDs</h1>
 
                 <form method="post" enctype="multipart/form-data">
                     <h1></h1>
@@ -295,5 +325,241 @@ if (!class_exists('Combination_Manager')) :
             <?php
         }
 
+        public function create_combination (Combination_Item $combination_item)
+        {
+            // Create the post and attach the Combination ID at once
+
+            $post_title = $combination_item->combination_id . ' - ' .
+                $combination_item->category   . ' - ' .
+                $combination_item->collection . ' - ' .
+                $combination_item->model      . ' - ' .
+                $combination_item->variant    . ' - ' .
+                $combination_item->finish     . ' - ' .
+                $combination_item->color;
+
+            $post_args	= [
+                'post_title'	=> $post_title,
+                'post_status'   => 'publish',
+                'post_type'     => 'combination',
+            ];
+
+            // Create post
+            $combination_post_id = wp_insert_post($post_args);
+            if (is_wp_error( $combination_post_id )) {
+                $this->_log_create($combination_post_id ->get_error_message());
+                return;
+            }
+            // Update _combination_id
+            update_post_meta($combination_post_id, '_combination_id', $combination_item->combination_id);
+
+            // Add images to the post
+            $this->post_images_handle($combination_post_id, $combination_item);
+
+            // Check whether the exact term ("White") exists under the taxonomy ("Color")
+            // If it doesn't, create it.
+            $category_term_id   = false;
+            $collection_term_id = false;
+            $model_term_id      = false;
+            $variant_term_id    = false;
+            $finish_term_id     = false;
+            $color_term_id      = false;
+
+            // Cascade structure: $field_term_id may return false if not created; we don't want orphaned terms
+            $category_term_id   = $this->create_term_if_needed($combination_item->category, null);
+            if ($category_term_id) {
+                $collection_term_id = $this->create_term_if_needed($combination_item->collection, $category_term_id);
+                if ($collection_term_id) {
+                    $model_term_id = $this->create_term_if_needed($combination_item->model, $collection_term_id);
+                    if ($model_term_id) {
+                        $variant_term_id = $this->create_term_if_needed($combination_item->variant, $model_term_id);
+                        if ($variant_term_id) {
+                            $finish_term_id = $this->create_term_if_needed($combination_item->finish, $variant_term_id);
+                            if ($finish_term_id) {
+                                $color_term_id = $this->create_term_if_needed($combination_item->color, $finish_term_id);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Create the terms that will be appended to the post
+            $term_id_array = [
+                intval($category_term_id),
+                intval($collection_term_id),
+                intval($model_term_id),
+                intval($variant_term_id),
+                intval($finish_term_id),
+                intval($color_term_id),
+            ];
+            // Remove all of the 0/false values (false gets cast to 0 via intval)
+            $term_id_array = array_diff($term_id_array, [0]);
+
+            // Set all terms at once and discard previous.
+            wp_set_object_terms($combination_post_id, $term_id_array, 'combination_category',false);
+
+            // Log
+            $this->_log_create("Created combination {$combination_item->combination_id} in post {$combination_post_id}." );
+        }
+
+        public function create_term_if_needed($field_value, $field_parent)
+        {
+
+            $field_term = term_exists($field_value, 'combination_category', $field_parent);
+            $field_term_id = $field_term['term_id'];
+            //$field_term_taxonomy_id = $field_term['term_taxonomy_id'];
+
+            $can_create_field_term = !$field_term_id && !empty($field_value);
+
+            if ($field_term_id) {
+
+                // If the term already exists, we return its ID
+                return $field_term_id;
+
+            } else if (empty($field_value)) {
+
+                // If the incoming value is empty, we return false
+                return false;
+
+            } else if ($can_create_field_term) {
+
+                // If the term_id doesn't exist (id 40 for "White"), and there's an incoming value ("White") we create said term
+                $new_field_term = wp_insert_term($field_value, 'combination_category');
+                if (is_wp_error($new_field_term)) {
+                    $this->_log_general($new_field_term->get_error_message());
+                } else {
+                    $new_field_term_id = $new_field_term['term_id'];
+                    return $new_field_term_id;
+                }
+            }
+        }
+        
+        public function post_images_handle ($combination_post_id, Combination_Item $combination_item)
+        {
+            if( trim( $combination_item->image_png ) ) {
+                // First Find old image
+                $png_image_id	= $this->find_image_by_name( $combination_item->image_png );
+                if( $png_image_id ) {
+                    if( function_exists( 'update_field' ) ) {
+                        update_field( 'combination_png_image', $png_image_id, $combination_post_id );
+                    }
+                } else {
+                    $png_image_id	= $this->find_image_by_source_url( $combination_item->image_png );
+                    if( $png_image_id ) {
+                        if( function_exists( 'update_field' ) ) {
+                            update_field( 'combination_png_image', $png_image_id, $combination_post_id );
+                        }
+                    } else {
+                        $png_image_id	= media_sideload_image( $combination_item->image_png, false, NULL, 'id' );
+
+                        if( ! is_wp_error( $png_image_id ) ) {
+                            if( function_exists( 'update_field' ) ) {
+                                update_field( 'combination_png_image', $png_image_id, $combination_post_id );
+                            }
+                        } else {
+                            $this->_log_general( 'new combination PNG media_sideload_image error' );
+                            $this->_log_general( $png_image_id->get_error_messages() );
+                        }
+                    }
+                }
+            } // else {} // else for empty image
+
+            // FOR JPG	
+            if( trim( $combination_item->image_jpg ) ) {
+                // First Find old image
+                $jpg_image_id	= $this->find_image_by_name( $combination_item->image_jpg );
+                if( $jpg_image_id ) {
+                    if( function_exists( 'update_field' ) ) {
+                        update_field( 'combination_jpg_image', $jpg_image_id, $combination_post_id );
+                    }
+                } else {
+                    $jpg_image_id	= $this->find_image_by_source_url( $combination_item->image_jpg );
+                    if( $jpg_image_id ) {
+                        if( function_exists( 'update_field' ) ) {
+                            update_field( 'combination_jpg_image', $jpg_image_id, $combination_post_id );
+                        }
+                    } else {
+                        $jpg_image_id	= media_sideload_image( $combination_item->image_jpg, false, NULL, 'id' );
+                        if( ! is_wp_error( $jpg_image_id ) ) {
+                            if( function_exists( 'update_field' ) ) {
+                                update_field( 'combination_jpg_image', $jpg_image_id, $combination_post_id );
+                            }
+                        } else {
+                            $this->_log_general( 'new combination JPG media_sideload_image error' );
+                            $this->_log_general( $jpg_image_id->get_error_messages() );
+                        }
+                    }
+                }
+            } // else {} // Else for empty image
+        }
+
+        public function find_image_by_name( $file = '' ) {
+            if( ! $file ) {
+                return false;
+            }
+
+            $filename	= strtolower( pathinfo( $file, PATHINFO_FILENAME ) );
+            $fileext	= strtolower( pathinfo( $file, PATHINFO_EXTENSION ) );
+
+            if( ! $filename || ! $fileext ) {
+                return false;
+            }
+
+            global $wpdb;
+
+            $attachment_ids	= $wpdb->get_results( "SELECT ID, guid FROM " . $wpdb->posts . " WHERE LOWER(post_title) = '" . $filename . "' AND post_type = 'attachment'" );
+
+            if( $attachment_ids ) {
+                foreach( $attachment_ids as $attachment ) {
+                    $attachment_ext	= strtolower( pathinfo( $attachment->guid, PATHINFO_EXTENSION ) );
+
+                    if( $attachment_ext != $fileext ) {
+                        continue;
+                    }
+
+                    $attachment_path	= get_attached_file( $attachment->ID );
+
+                    if( file_exists( $attachment_path ) ) {
+                        return $attachment->ID;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        public function find_image_by_source_url( $source_url = '' ) {
+            global $wpdb;
+
+            if( ! $source_url ) {
+                return false;
+            }
+
+            $attachment_id	= $wpdb->get_var( "SELECT post_id FROM " . $wpdb->postmeta . " WHERE meta_key = '_source_url' AND meta_value = '" . $source_url . "'" );
+
+            if( $attachment_id ) {
+                $attachment_path	= get_attached_file( $attachment_id );
+                if( file_exists( $attachment_path ) ) {
+                    return $attachment_id;
+                }
+            }
+
+            return false;
+        }
+
+        public function _log_ci($msg = "")
+        {
+            $msg = (is_array($msg) || is_object($msg)) ? print_r($msg, 1) : $msg;
+            error_log(date('[Y-m-d H:i:s e] ') . $msg . PHP_EOL, 3, __DIR__ . "/ci.log");
+        }
+
+        public function _log_create($msg = "") {
+            $msg = (is_array($msg) || is_object($msg)) ? print_r($msg, 1) : $msg;
+            error_log(date('[Y-m-d H:i:s e] ') . $msg . PHP_EOL, 3, __DIR__ . "/create.log");
+        }
+
+        public function _log_general ($msg = "") {
+            $msg = (is_array($msg) || is_object($msg)) ? print_r($msg, 1) : $msg;
+            error_log(date('[Y-m-d H:i:s e] ') . $msg . PHP_EOL, 3, __DIR__ . "/general.log");
+        }
     }
 endif;
