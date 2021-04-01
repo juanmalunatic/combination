@@ -140,9 +140,9 @@ class Custom_Combination {
 	*/
 	
 	public function combination_sub_menu_add() {
-	    add_submenu_page( 'edit.php?post_type=combination', 'Import Category','Import category', 'administrator', 'category_imports', array( $this, 'category_imports_page' ) );		add_submenu_page( 'edit.php?post_type=combination', 'Import Collection', 'Import collection', 'administrator', 'collection_imports', array( $this, 'collection_imports_page' ) );
-		add_submenu_page( 'edit.php?post_type=combination', 'Import Model', 'Import model', 'administrator', 'model_imports', array( $this, 'model_imports_page' ) );
-		add_submenu_page( 'edit.php?post_type=combination', 'Import Combination', 'Import combination', 'administrator', 'combination_imports', array( $this, 'combination_imports_page' ) );
+	    // add_submenu_page( 'edit.php?post_type=combination', 'Import Category','Import category', 'administrator', 'category_imports', array( $this, 'category_imports_page' ) );		add_submenu_page( 'edit.php?post_type=combination', 'Import Collection', 'Import collection', 'administrator', 'collection_imports', array( $this, 'collection_imports_page' ) );
+		// add_submenu_page( 'edit.php?post_type=combination', 'Import Model', 'Import model', 'administrator', 'model_imports', array( $this, 'model_imports_page' ) );
+		// add_submenu_page( 'edit.php?post_type=combination', 'Import Combination', 'Import combination', 'administrator', 'combination_imports', array( $this, 'combination_imports_page' ) );
 
 		// New pages
         $cm = new Combination_Manager();
