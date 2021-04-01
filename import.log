@@ -1,0 +1,144 @@
+[2021-04-01 00:41:17 UTC] 
+[2021-04-01 00:41:17 UTC] 
+[2021-04-01 00:41:18 UTC] ===###*** combinations_import_csv ***###===
+[2021-04-01 00:41:19 UTC] combination: 1
+[2021-04-01 00:41:19 UTC] category: Low Fossil Fuel
+[2021-04-01 00:41:20 UTC] collection: European Planters
+[2021-04-01 00:41:20 UTC] model: European Cylinder
+[2021-04-01 00:41:21 UTC] varient: Planter Only
+[2021-04-01 00:41:21 UTC] finish: Gloss Finish
+[2021-04-01 00:41:21 UTC] color: White
+[2021-04-01 00:42:33 UTC] check category term_id: 17558
+[2021-04-01 00:42:33 UTC] check category term_taxonomy_id: 17557
+[2021-04-01 00:44:10 UTC] check collection term_id: 17564
+[2021-04-01 00:44:11 UTC] check collection term_taxonomy_id: 17563
+[2021-04-01 00:45:06 UTC] check model term_id: 17594
+[2021-04-01 00:45:07 UTC] check model term_taxonomy_id: 17593
+[2021-04-01 00:45:11 UTC] check varient term_id: 17684
+[2021-04-01 00:45:11 UTC] check varient term_taxonomy_id: 17683
+[2021-04-01 00:46:32 UTC] check finish term_id: 17685
+[2021-04-01 00:46:33 UTC] check finish term_taxonomy_id: 17684
+[2021-04-01 00:46:53 UTC] check color term_id: 17686
+[2021-04-01 00:46:54 UTC] check color term_taxonomy_id: 17685
+[2021-04-01 00:47:45 UTC] check_combinations ids: 86059, 86058, 86057, 86056, 86055
+[2021-04-01 00:47:47 UTC] SKIP: 1 -- Low Fossil Fuel -- European Planters -- European Cylinder -- Planter Only -- Gloss Finish -- White
+[2021-04-01 00:47:59 UTC] 
+[2021-04-01 00:48:00 UTC] 
+[2021-04-01 00:48:00 UTC] ===###*** combinations_import_csv ***###===
+[2021-04-01 00:48:01 UTC] combination: 2
+[2021-04-01 00:48:01 UTC] category: Low Fossil Fuel
+[2021-04-01 00:48:02 UTC] collection: European Planters
+[2021-04-01 00:48:02 UTC] model: European Cylinder
+[2021-04-01 00:48:02 UTC] varient: Planter Only
+[2021-04-01 00:48:03 UTC] finish: Gloss Finish
+[2021-04-01 00:48:03 UTC] color: Black
+[2021-04-01 00:56:38 UTC] 
+[2021-04-01 00:56:38 UTC] 
+[2021-04-01 00:56:38 UTC] ===###*** combinations_import_csv ***###===
+[2021-04-01 00:56:38 UTC] combination: 1
+[2021-04-01 00:56:38 UTC] category: Low Fossil Fuel
+[2021-04-01 00:56:38 UTC] collection: European Planters
+[2021-04-01 00:56:38 UTC] model: European Cylinder
+[2021-04-01 00:56:38 UTC] varient: Planter Only
+[2021-04-01 00:56:38 UTC] finish: Gloss Finish
+[2021-04-01 00:56:38 UTC] color: White
+[2021-04-01 00:56:38 UTC] check category term_id: 17558
+[2021-04-01 00:56:38 UTC] check category term_taxonomy_id: 17557
+[2021-04-01 00:56:38 UTC] check collection term_id: 17564
+[2021-04-01 00:56:38 UTC] check collection term_taxonomy_id: 17563
+[2021-04-01 00:56:38 UTC] check model term_id: 17594
+[2021-04-01 00:56:38 UTC] check model term_taxonomy_id: 17593
+[2021-04-01 00:56:38 UTC] check varient term_id: 17684
+[2021-04-01 00:56:38 UTC] check varient term_taxonomy_id: 17683
+[2021-04-01 00:56:38 UTC] check finish term_id: 17685
+[2021-04-01 00:56:38 UTC] check finish term_taxonomy_id: 17684
+[2021-04-01 00:56:38 UTC] check color term_id: 17686
+[2021-04-01 00:56:38 UTC] check color term_taxonomy_id: 17685
+[2021-04-01 01:03:29 UTC] 
+[2021-04-01 01:03:29 UTC] 
+[2021-04-01 01:03:29 UTC] ===###*** combinations_import_csv ***###===
+[2021-04-01 01:03:29 UTC] combination: 1
+[2021-04-01 01:03:29 UTC] category: Low Fossil Fuel
+[2021-04-01 01:03:29 UTC] collection: European Planters
+[2021-04-01 01:03:29 UTC] model: European Cylinder
+[2021-04-01 01:03:29 UTC] varient: Planter Only
+[2021-04-01 01:03:29 UTC] finish: Gloss Finish
+[2021-04-01 01:03:29 UTC] color: White
+[2021-04-01 01:03:29 UTC] check category term_id: 17558
+[2021-04-01 01:03:29 UTC] check category term_taxonomy_id: 17557
+[2021-04-01 01:03:29 UTC] check collection term_id: 17564
+[2021-04-01 01:03:29 UTC] check collection term_taxonomy_id: 17563
+[2021-04-01 01:03:29 UTC] check model term_id: 17594
+[2021-04-01 01:03:29 UTC] check model term_taxonomy_id: 17593
+[2021-04-01 01:03:29 UTC] check varient term_id: 17684
+[2021-04-01 01:03:29 UTC] check varient term_taxonomy_id: 17683
+[2021-04-01 01:03:29 UTC] check finish term_id: 17685
+[2021-04-01 01:03:29 UTC] check finish term_taxonomy_id: 17684
+[2021-04-01 01:03:29 UTC] check color term_id: 17686
+[2021-04-01 01:03:29 UTC] check color term_taxonomy_id: 17685
+[2021-04-01 01:15:43 UTC] 
+[2021-04-01 01:15:43 UTC] 
+[2021-04-01 01:15:43 UTC] ===###*** combinations_import_csv ***###===
+[2021-04-01 01:15:43 UTC] combination: 1
+[2021-04-01 01:15:43 UTC] category: Low Fossil Fuel
+[2021-04-01 01:15:43 UTC] collection: European Planters
+[2021-04-01 01:15:43 UTC] model: European Cylinder
+[2021-04-01 01:15:43 UTC] varient: Planter Only
+[2021-04-01 01:15:43 UTC] finish: Gloss Finish
+[2021-04-01 01:15:43 UTC] color: White
+[2021-04-01 01:15:43 UTC] check category term_id: 17558
+[2021-04-01 01:15:43 UTC] check category term_taxonomy_id: 17557
+[2021-04-01 01:15:43 UTC] check collection term_id: 17564
+[2021-04-01 01:15:43 UTC] check collection term_taxonomy_id: 17563
+[2021-04-01 01:15:43 UTC] check model term_id: 17594
+[2021-04-01 01:15:43 UTC] check model term_taxonomy_id: 17593
+[2021-04-01 01:15:43 UTC] check varient term_id: 17684
+[2021-04-01 01:15:43 UTC] check varient term_taxonomy_id: 17683
+[2021-04-01 01:15:43 UTC] check finish term_id: 17685
+[2021-04-01 01:15:43 UTC] check finish term_taxonomy_id: 17684
+[2021-04-01 01:15:43 UTC] check color term_id: 17686
+[2021-04-01 01:15:43 UTC] check color term_taxonomy_id: 17685
+[2021-04-01 01:24:52 UTC] 
+[2021-04-01 01:24:52 UTC] 
+[2021-04-01 01:24:52 UTC] ===###*** combinations_import_csv ***###===
+[2021-04-01 01:24:52 UTC] combination: 1
+[2021-04-01 01:24:52 UTC] category: Low Fossil Fuel
+[2021-04-01 01:24:52 UTC] collection: European Planters
+[2021-04-01 01:24:52 UTC] model: European Cylinder
+[2021-04-01 01:24:52 UTC] varient: Planter Only
+[2021-04-01 01:24:52 UTC] finish: Gloss Finish
+[2021-04-01 01:24:52 UTC] color: White
+[2021-04-01 01:24:52 UTC] check category term_id: 17558
+[2021-04-01 01:24:52 UTC] check category term_taxonomy_id: 17557
+[2021-04-01 01:24:52 UTC] check collection term_id: 17564
+[2021-04-01 01:24:52 UTC] check collection term_taxonomy_id: 17563
+[2021-04-01 01:24:52 UTC] check model term_id: 17594
+[2021-04-01 01:24:52 UTC] check model term_taxonomy_id: 17593
+[2021-04-01 01:24:52 UTC] check varient term_id: 17684
+[2021-04-01 01:24:52 UTC] check varient term_taxonomy_id: 17683
+[2021-04-01 01:24:52 UTC] check finish term_id: 17685
+[2021-04-01 01:24:52 UTC] check finish term_taxonomy_id: 17684
+[2021-04-01 01:24:52 UTC] check color term_id: 17686
+[2021-04-01 01:24:52 UTC] check color term_taxonomy_id: 17685
+[2021-04-01 01:26:55 UTC] 
+[2021-04-01 01:26:55 UTC] 
+[2021-04-01 01:26:55 UTC] ===###*** combinations_import_csv ***###===
+[2021-04-01 01:26:55 UTC] combination: 1
+[2021-04-01 01:26:55 UTC] category: Low Fossil Fuel
+[2021-04-01 01:26:55 UTC] collection: European Planters
+[2021-04-01 01:26:55 UTC] model: European Cylinder
+[2021-04-01 01:26:55 UTC] varient: Planter Only
+[2021-04-01 01:26:55 UTC] finish: Gloss Finish
+[2021-04-01 01:26:55 UTC] color: White
+[2021-04-01 01:26:55 UTC] check category term_id: 17558
+[2021-04-01 01:26:55 UTC] check category term_taxonomy_id: 17557
+[2021-04-01 01:26:55 UTC] check collection term_id: 17564
+[2021-04-01 01:26:55 UTC] check collection term_taxonomy_id: 17563
+[2021-04-01 01:26:55 UTC] check model term_id: 17594
+[2021-04-01 01:26:55 UTC] check model term_taxonomy_id: 17593
+[2021-04-01 01:26:55 UTC] check varient term_id: 17684
+[2021-04-01 01:26:55 UTC] check varient term_taxonomy_id: 17683
+[2021-04-01 01:26:55 UTC] check finish term_id: 17685
+[2021-04-01 01:26:55 UTC] check finish term_taxonomy_id: 17684
+[2021-04-01 01:26:55 UTC] check color term_id: 17686
+[2021-04-01 01:26:55 UTC] check color term_taxonomy_id: 17685
