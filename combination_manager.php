@@ -42,12 +42,11 @@ if (!class_exists('Combination_Manager')) :
                 ]);
 
                 $posts_count = count($posts);
-                $a = "b";
 
                 if($posts_count === 0) {
-                    $this->create_combination($combination_item);
+                    $this->upsert_combination("insert", $combination_item);
                 } else {
-                    $this->update_combination($posts[0], $combination_item);
+                    $this->upsert_combination("update", $combination_item, $posts[0]);
                 }
             }
         }
@@ -325,31 +324,46 @@ if (!class_exists('Combination_Manager')) :
             <?php
         }
 
-        public function create_combination (Combination_Item $combination_item)
+        public function upsert_combination(
+            string $action,
+            Combination_Item $combination_item,
+            WP_Post $post_existing = null
+        )
         {
-            // Create the post and attach the Combination ID at once
-
+            // Create the post title
             $post_title = $combination_item->combination_id . ' - ' .
-                $combination_item->category   . ' - ' .
+                $combination_item->category . ' - ' .
                 $combination_item->collection . ' - ' .
-                $combination_item->model      . ' - ' .
-                $combination_item->variant    . ' - ' .
-                $combination_item->finish     . ' - ' .
+                $combination_item->model . ' - ' .
+                $combination_item->variant . ' - ' .
+                $combination_item->finish . ' - ' .
                 $combination_item->color;
 
-            $post_args	= [
-                'post_title'	=> $post_title,
-                'post_status'   => 'publish',
-                'post_type'     => 'combination',
+            // Handle post status and post type
+            $post_args = [
+                'post_title' => $post_title,
+                'post_status' => 'publish',
+                'post_type' => 'combination',
             ];
 
-            // Create post
-            $combination_post_id = wp_insert_post($post_args);
-            if (is_wp_error( $combination_post_id )) {
-                $this->_log_create($combination_post_id ->get_error_message());
-                return;
+            if ($action === 'insert') {
+                // If inserting, create a post type with the required arguments
+                $combination_post_id = wp_insert_post($post_args);
+                if (is_wp_error($combination_post_id)) {
+                    $this->_log_create($combination_post_id->get_error_message());
+                    return;
+                }
+            } else {
+                // If updating, ensure the arguments are right (aka pass $post_args)
+                $combination_post_id = $post_existing->ID;
+                $post_args['ID'] = $post_existing->ID;
+                $updated_post = wp_update_post($post_args);
+                if (is_wp_error($updated_post)) {
+                    $this->_log_create($updated_post->get_error_message());
+                }
             }
-            // Update _combination_id
+
+            // Update _combination_id for both cases: updating and inserting
             update_post_meta($combination_post_id, '_combination_id', $combination_item->combination_id);
 
             // Add images to the post
@@ -357,15 +371,15 @@ if (!class_exists('Combination_Manager')) :
 
             // Check whether the exact term ("White") exists under the taxonomy ("Color")
             // If it doesn't, create it.
-            $category_term_id   = false;
+            $category_term_id = false;
             $collection_term_id = false;
-            $model_term_id      = false;
-            $variant_term_id    = false;
-            $finish_term_id     = false;
-            $color_term_id      = false;
+            $model_term_id = false;
+            $variant_term_id = false;
+            $finish_term_id = false;
+            $color_term_id = false;
 
             // Cascade structure: $field_term_id may return false if not created; we don't want orphaned terms
-            $category_term_id   = $this->create_term_if_needed($combination_item->category, null);
+            $category_term_id = $this->create_term_if_needed($combination_item->category, null);
             if ($category_term_id) {
                 $collection_term_id = $this->create_term_if_needed($combination_item->collection, $category_term_id);
                 if ($collection_term_id) {
@@ -395,18 +409,21 @@ if (!class_exists('Combination_Manager')) :
             $term_id_array = array_diff($term_id_array, [0]);
 
             // Set all terms at once and discard previous.
-            wp_set_object_terms($combination_post_id, $term_id_array, 'combination_category',false);
+            wp_set_object_terms($combination_post_id, $term_id_array, 'combination_category', false);
 
             // Log
-            $this->_log_create("Created combination {$combination_item->combination_id} in post {$combination_post_id}." );
+            if ($action === 'insert') {
+                $this->_log_create("Created combination {$combination_item->combination_id} in post {$combination_post_id}.");
+            } else if ($action === 'update') {
+                $this->_log_create("Updated combination {$combination_item->combination_id} in post {$combination_post_id}.");
+            }
         }
 
-        public function create_term_if_needed($field_value, $field_parent)
+        public function create_term_if_needed($field_value, $field_parent_term_id)
         {
 
-            $field_term = term_exists($field_value, 'combination_category', $field_parent);
+            $field_term = term_exists($field_value, 'combination_category', $field_parent_term_id);
             $field_term_id = $field_term['term_id'];
-            //$field_term_taxonomy_id = $field_term['term_taxonomy_id'];
 
             $can_create_field_term = !$field_term_id && !empty($field_value);
 
@@ -423,7 +440,16 @@ if (!class_exists('Combination_Manager')) :
             } else if ($can_create_field_term) {
 
                 // If the term_id doesn't exist (id 40 for "White"), and there's an incoming value ("White") we create said term
-                $new_field_term = wp_insert_term($field_value, 'combination_category');
+                // Note that the term is tied to the parent:
+                //   "Metallic Finish" - "Silver" is different than
+                //   "Gloss Finish"    - "Silver" (both are Silver but w/ different parent id)
+
+                $term_args = [];
+                if($field_parent_term_id !== null) {
+                    $term_args['parent'] = intval($field_parent_term_id);
+                }
+
+                $new_field_term = wp_insert_term($field_value,'combination_category', $term_args);
                 if (is_wp_error($new_field_term)) {
                     $this->_log_general($new_field_term->get_error_message());
                 } else {
