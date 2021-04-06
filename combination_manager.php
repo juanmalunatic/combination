@@ -15,6 +15,12 @@ if (!class_exists('Combination_Manager')) :
         {
         }
 
+        public function register_hooks()
+        {
+            // Export CSV functionality: WordPress hasn't sent headers yet on admin_init.
+            add_action('admin_init', [$this, 'export_combinations_all']);
+        }
+
         public function import_combinations($csv_file = [])
         {
             wp_cache_flush();
@@ -36,21 +42,20 @@ if (!class_exists('Combination_Manager')) :
                 // Look for the post associated with said item
                 $posts = get_posts([
                     'post_status' => 'publish',
-                    'post_type'   => 'combination',
-                    'meta_key'    => '_combination_id',
-                    'meta_value'  => $combination_item->combination_id,
+                    'post_type' => 'combination',
+                    'meta_key' => '_combination_id',
+                    'meta_value' => $combination_item->combination_id,
                 ]);
 
                 $posts_count = count($posts);
 
-                if($posts_count === 0) {
+                if ($posts_count === 0) {
                     $this->upsert_combination("insert", $combination_item);
                 } else {
                     $this->upsert_combination("update", $combination_item, $posts[0]);
                 }
             }
         }
-
 
         public function update_combination_ids($csv_file = [])
         {
@@ -141,7 +146,6 @@ if (!class_exists('Combination_Manager')) :
             }
         }
 
-
         public function add_metabox_edit_post()
         {
             // add_meta_box(
@@ -158,12 +162,12 @@ if (!class_exists('Combination_Manager')) :
         public function add_metabox_edit_post_content()
         {
             $post_id = get_the_ID();
-            echo "Hello {$post_id} :)" ;
+            echo "Hello {$post_id} :)";
         }
 
         public function submenu_add_pages_cm()
         {
-            // Update combination IDs
+            // Import Combinations
             add_submenu_page(
                 'edit.php?post_type=combination',
                 'Import Combinations',
@@ -171,6 +175,16 @@ if (!class_exists('Combination_Manager')) :
                 'administrator',
                 'import_combinations',
                 [$this, 'page_import_combinations']
+            );
+
+            // Export Combinations
+            add_submenu_page(
+                'edit.php?post_type=combination',
+                'Export Combinations',
+                'Export Combinations',
+                'administrator',
+                'export_combinations',
+                [$this, 'page_export_combinations']
             );
 
             // Update combination IDs
@@ -183,15 +197,15 @@ if (!class_exists('Combination_Manager')) :
                 [$this, 'page_update_combination_ids']
             );
 
-            // Update any existing value / category
-            add_submenu_page(
-                'edit.php?post_type=combination',
-                'Modify Terms',
-                'Modify Terms',
-                'administrator',
-                'update_terms',
-                [$this, 'page_update_terms']
-            );
+            // TODO Submenu: Update existing values / categories
+            // add_submenu_page(
+            //     'edit.php?post_type=combination',
+            //     'Modify Terms',
+            //     'Modify Terms',
+            //     'administrator',
+            //     'update_terms',
+            //     [$this, 'page_update_terms']
+            // );
 
         }
 
@@ -266,13 +280,6 @@ if (!class_exists('Combination_Manager')) :
             <?php
         }
 
-        public function page_update_terms()
-        {
-            ?>
-            Hello :)
-            <?php
-        }
-
         public function page_update_combination_ids()
         {
 
@@ -342,6 +349,89 @@ if (!class_exists('Combination_Manager')) :
                 </form>
             </div>
             <?php
+        }
+
+        public function page_export_combinations()
+        {
+            ?>
+            <div class="wrap">
+
+                <h1>Export Combinations</h1>
+
+                <form method="POST" enctype="multipart/form-data" action="">
+
+                    <input type="hidden" name="action" value="export_combinations_all"/>
+
+                    <table class="form-table">
+                        <tr>
+                            <th scope="row">
+                                <label for="import_combinations_file">Generate CSV</label>
+                            </th>
+                            <td>
+                                <input type="submit"
+                                       id="submit"
+                                       class="button button-primary"
+                                       value="Export All">
+                            </td>
+                        </tr>
+                    </table>
+                </form>
+            </div>
+            <?php
+        }
+
+        // TODO Page: Update existing values / categories
+        public function page_update_terms()
+        {
+            ?>
+            Hello :)
+            <?php
+        }
+
+        public function export_combinations_all()
+        {
+            global $pagenow; // edit.php
+            $post_type = $_GET['post_type'];
+            $page      = $_GET['page'];
+
+            // This hook runs on every admin page so we want to exit ASAP.
+            if ($pagenow != "edit.php" || $post_type != "combination" || $page != "export_combinations") {
+                return;
+            }
+
+            // Here we check the actual action
+            $action = $_POST['action'];
+            if ($action != "export_combinations_all") {
+                return;
+            }
+
+            // Temporarily increase PHP's processing capacity
+            set_time_limit(0);
+            ini_set('memory_limit', '2048M');
+            ini_set('post_max_size', '200M');
+            ini_set('upload_max_filesize', '200M');
+            ini_set('max_allowed_packet', '200M');
+            defined('WP_MEMORY_LIMIT') || define('WP_MEMORY_LIMIT', '2048M');
+
+            // Query the data that will be exported
+
+            // Stream the data as a CSV to the browser
+            // Based off: https://code.iamkate.com/php/creating-downloadable-csv-files/
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment; filename=data.csv');
+            $output = fopen('php://output', 'w');
+
+            fputcsv($output, array('Column 1', 'Column 2', 'Column 3'));
+            $sample_rows = [
+                ["Hello", "this", "is"],
+                ["Hi", "I", "am"],
+                ["Bonjour", "Je", "Suis"],
+            ];
+            foreach ($sample_rows as $row) {
+                fputcsv($output, $row);
+            }
+            fclose($output);
+            die(); // Avoid outputting the rest of Wordpress
         }
 
         public function upsert_combination(
@@ -465,11 +555,11 @@ if (!class_exists('Combination_Manager')) :
                 //   "Gloss Finish"    - "Silver" (both are Silver but w/ different parent id)
 
                 $term_args = [];
-                if($field_parent_term_id !== null) {
+                if ($field_parent_term_id !== null) {
                     $term_args['parent'] = intval($field_parent_term_id);
                 }
 
-                $new_field_term = wp_insert_term($field_value,'combination_category', $term_args);
+                $new_field_term = wp_insert_term($field_value, 'combination_category', $term_args);
                 if (is_wp_error($new_field_term)) {
                     $this->_log_general($new_field_term->get_error_message());
                 } else {
@@ -478,93 +568,94 @@ if (!class_exists('Combination_Manager')) :
                 }
             }
         }
-        
-        public function post_images_handle ($combination_post_id, Combination_Item $combination_item)
+
+        public function post_images_handle($combination_post_id, Combination_Item $combination_item)
         {
-            if( trim( $combination_item->image_png ) ) {
+            if (trim($combination_item->image_png)) {
                 // First Find old image
-                $png_image_id	= $this->find_image_by_name( $combination_item->image_png );
-                if( $png_image_id ) {
-                    if( function_exists( 'update_field' ) ) {
-                        update_field( 'combination_png_image', $png_image_id, $combination_post_id );
+                $png_image_id = $this->find_image_by_name($combination_item->image_png);
+                if ($png_image_id) {
+                    if (function_exists('update_field')) {
+                        update_field('combination_png_image', $png_image_id, $combination_post_id);
                     }
                 } else {
-                    $png_image_id	= $this->find_image_by_source_url( $combination_item->image_png );
-                    if( $png_image_id ) {
-                        if( function_exists( 'update_field' ) ) {
-                            update_field( 'combination_png_image', $png_image_id, $combination_post_id );
+                    $png_image_id = $this->find_image_by_source_url($combination_item->image_png);
+                    if ($png_image_id) {
+                        if (function_exists('update_field')) {
+                            update_field('combination_png_image', $png_image_id, $combination_post_id);
                         }
                     } else {
-                        $png_image_id	= media_sideload_image( $combination_item->image_png, false, NULL, 'id' );
+                        $png_image_id = media_sideload_image($combination_item->image_png, false, NULL, 'id');
 
-                        if( ! is_wp_error( $png_image_id ) ) {
-                            if( function_exists( 'update_field' ) ) {
-                                update_field( 'combination_png_image', $png_image_id, $combination_post_id );
+                        if (!is_wp_error($png_image_id)) {
+                            if (function_exists('update_field')) {
+                                update_field('combination_png_image', $png_image_id, $combination_post_id);
                             }
                         } else {
-                            $this->_log_general( 'new combination PNG media_sideload_image error' );
-                            $this->_log_general( $png_image_id->get_error_messages() );
+                            $this->_log_general('new combination PNG media_sideload_image error');
+                            $this->_log_general($png_image_id->get_error_messages());
                         }
                     }
                 }
             } // else {} // else for empty image
 
             // FOR JPG	
-            if( trim( $combination_item->image_jpg ) ) {
+            if (trim($combination_item->image_jpg)) {
                 // First Find old image
-                $jpg_image_id	= $this->find_image_by_name( $combination_item->image_jpg );
-                if( $jpg_image_id ) {
-                    if( function_exists( 'update_field' ) ) {
-                        update_field( 'combination_jpg_image', $jpg_image_id, $combination_post_id );
+                $jpg_image_id = $this->find_image_by_name($combination_item->image_jpg);
+                if ($jpg_image_id) {
+                    if (function_exists('update_field')) {
+                        update_field('combination_jpg_image', $jpg_image_id, $combination_post_id);
                     }
                 } else {
-                    $jpg_image_id	= $this->find_image_by_source_url( $combination_item->image_jpg );
-                    if( $jpg_image_id ) {
-                        if( function_exists( 'update_field' ) ) {
-                            update_field( 'combination_jpg_image', $jpg_image_id, $combination_post_id );
+                    $jpg_image_id = $this->find_image_by_source_url($combination_item->image_jpg);
+                    if ($jpg_image_id) {
+                        if (function_exists('update_field')) {
+                            update_field('combination_jpg_image', $jpg_image_id, $combination_post_id);
                         }
                     } else {
-                        $jpg_image_id	= media_sideload_image( $combination_item->image_jpg, false, NULL, 'id' );
-                        if( ! is_wp_error( $jpg_image_id ) ) {
-                            if( function_exists( 'update_field' ) ) {
-                                update_field( 'combination_jpg_image', $jpg_image_id, $combination_post_id );
+                        $jpg_image_id = media_sideload_image($combination_item->image_jpg, false, NULL, 'id');
+                        if (!is_wp_error($jpg_image_id)) {
+                            if (function_exists('update_field')) {
+                                update_field('combination_jpg_image', $jpg_image_id, $combination_post_id);
                             }
                         } else {
-                            $this->_log_general( 'new combination JPG media_sideload_image error' );
-                            $this->_log_general( $jpg_image_id->get_error_messages() );
+                            $this->_log_general('new combination JPG media_sideload_image error');
+                            $this->_log_general($jpg_image_id->get_error_messages());
                         }
                     }
                 }
             } // else {} // Else for empty image
         }
 
-        public function find_image_by_name( $file = '' ) {
-            if( ! $file ) {
+        public function find_image_by_name($file = '')
+        {
+            if (!$file) {
                 return false;
             }
 
-            $filename	= strtolower( pathinfo( $file, PATHINFO_FILENAME ) );
-            $fileext	= strtolower( pathinfo( $file, PATHINFO_EXTENSION ) );
+            $filename = strtolower(pathinfo($file, PATHINFO_FILENAME));
+            $fileext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
 
-            if( ! $filename || ! $fileext ) {
+            if (!$filename || !$fileext) {
                 return false;
             }
 
             global $wpdb;
 
-            $attachment_ids	= $wpdb->get_results( "SELECT ID, guid FROM " . $wpdb->posts . " WHERE LOWER(post_title) = '" . $filename . "' AND post_type = 'attachment'" );
+            $attachment_ids = $wpdb->get_results("SELECT ID, guid FROM " . $wpdb->posts . " WHERE LOWER(post_title) = '" . $filename . "' AND post_type = 'attachment'");
 
-            if( $attachment_ids ) {
-                foreach( $attachment_ids as $attachment ) {
-                    $attachment_ext	= strtolower( pathinfo( $attachment->guid, PATHINFO_EXTENSION ) );
+            if ($attachment_ids) {
+                foreach ($attachment_ids as $attachment) {
+                    $attachment_ext = strtolower(pathinfo($attachment->guid, PATHINFO_EXTENSION));
 
-                    if( $attachment_ext != $fileext ) {
+                    if ($attachment_ext != $fileext) {
                         continue;
                     }
 
-                    $attachment_path	= get_attached_file( $attachment->ID );
+                    $attachment_path = get_attached_file($attachment->ID);
 
-                    if( file_exists( $attachment_path ) ) {
+                    if (file_exists($attachment_path)) {
                         return $attachment->ID;
                     }
                 }
@@ -573,18 +664,19 @@ if (!class_exists('Combination_Manager')) :
             return false;
         }
 
-        public function find_image_by_source_url( $source_url = '' ) {
+        public function find_image_by_source_url($source_url = '')
+        {
             global $wpdb;
 
-            if( ! $source_url ) {
+            if (!$source_url) {
                 return false;
             }
 
-            $attachment_id	= $wpdb->get_var( "SELECT post_id FROM " . $wpdb->postmeta . " WHERE meta_key = '_source_url' AND meta_value = '" . $source_url . "'" );
+            $attachment_id = $wpdb->get_var("SELECT post_id FROM " . $wpdb->postmeta . " WHERE meta_key = '_source_url' AND meta_value = '" . $source_url . "'");
 
-            if( $attachment_id ) {
-                $attachment_path	= get_attached_file( $attachment_id );
-                if( file_exists( $attachment_path ) ) {
+            if ($attachment_id) {
+                $attachment_path = get_attached_file($attachment_id);
+                if (file_exists($attachment_path)) {
                     return $attachment_id;
                 }
             }
@@ -598,12 +690,14 @@ if (!class_exists('Combination_Manager')) :
             error_log(date('[Y-m-d H:i:s e] ') . $msg . PHP_EOL, 3, __DIR__ . "/ci.log");
         }
 
-        public function _log_create($msg = "") {
+        public function _log_create($msg = "")
+        {
             $msg = (is_array($msg) || is_object($msg)) ? print_r($msg, 1) : $msg;
             error_log(date('[Y-m-d H:i:s e] ') . $msg . PHP_EOL, 3, __DIR__ . "/create.log");
         }
 
-        public function _log_general ($msg = "") {
+        public function _log_general($msg = "")
+        {
             $msg = (is_array($msg) || is_object($msg)) ? print_r($msg, 1) : $msg;
             error_log(date('[Y-m-d H:i:s e] ') . $msg . PHP_EOL, 3, __DIR__ . "/general.log");
         }

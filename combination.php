@@ -69,6 +69,9 @@ class Custom_Combination {
 	   add_action( 'wp_loaded', array( $this, 'maybe_cron_delete_page' ) );
 
 	   add_action( 'add_meta_boxes', [$this, 'combination_metaboxes'] );
+
+	   $cm = new Combination_Manager();
+	   $cm->register_hooks();
 	}
 
 	public function combination_metaboxes() {
@@ -1298,13 +1301,13 @@ class Custom_Combination {
 				   'labels'      => array(
 					   'name'          		=> __('Combination', 'textdomain'),
 					   'singular_name' 		=> __('Combination', 'textdomain'),
-					   'menu_name'          => __( 'All Combination', 'text_domain' ),
-					   'name_admin_bar'     => __( 'All Combination', 'text_domain' ),
+					   'menu_name'          => __( 'Combinations', 'text_domain' ),
+					   'name_admin_bar'     => __( 'Combinations', 'text_domain' ),
 					   'archives'           => __( 'Combination Archives', 'text_domain' ),
 					   'attributes'         => __( 'Combination Attributes', 'text_domain' ),
 					   'parent_item_colon'  => __( 'Parent Combination:', 'text_domain' ),
-					   'all_items'    		=> __( 'All Combination', 'text_domain' ),
-					   'add_new_item'   	=> __( 'Add New Combination', 'text_domain' ),
+					   'all_items'    		=> __( 'All Combinations', 'text_domain' ),
+					   'add_new_item'   	=> __( 'New Combination', 'text_domain' ),
 					   'add_new'            => __( 'Add Combination', 'text_domain' ),
 					   'new_item'       	=> __( 'New Combination', 'text_domain' ),
 					   'edit_item'      	=> __( 'Edit Combination', 'text_domain' ),
