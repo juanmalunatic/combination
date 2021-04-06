@@ -365,13 +365,16 @@ if (!class_exists('Combination_Manager')) :
                     <table class="form-table">
                         <tr>
                             <th scope="row">
-                                <label for="import_combinations_file">Generate CSV</label>
+                                <label for="import_combinations_file">Export All Combinations</label>
                             </th>
                             <td>
                                 <input type="submit"
                                        id="submit"
                                        class="button button-primary"
-                                       value="Export All">
+                                       value="Download CSV">
+                                <!--p>
+                                    This will export all combinations, so it may take a while.
+                                </p-->
                             </td>
                         </tr>
                     </table>
@@ -421,7 +424,7 @@ if (!class_exists('Combination_Manager')) :
                 'meta_key' => '_combination_id',
                 'orderby' => 'meta_value_num',
                 'order' => 'ASC',
-                'posts_per_page' => -1,
+                'posts_per_page' => -1, // Modify this to limit the amount of combinations
             ];
             $posts = get_posts($query_args);
             foreach ($posts as $post) {
@@ -438,12 +441,15 @@ if (!class_exists('Combination_Manager')) :
                         get_field('combination_jpg_image', $post->ID)
                 );
 
+                // Remove 'No Variant' so that output CSV == input CSV
+                $variant = ($terms[3]->name !== 'No Variant') ? $terms[3]->name : '';
+
                 $rows[] = [
                     0 => (int)$combination_id,
                     1 => $terms[0]->name,
                     2 => $terms[1]->name,
                     3 => $terms[2]->name,
-                    4 => $terms[3]->name,
+                    4 => $variant,
                     5 => $terms[4]->name,
                     6 => $terms[5]->name,
                     7 => $image_png,
