@@ -392,14 +392,14 @@ if (!class_exists('Combination_Manager')) :
         {
             global $pagenow; // edit.php
             $post_type = $_GET['post_type'];
-            $page      = $_GET['page'];
+            $page = $_GET['page'];
 
             // This hook runs on every admin page so we want to exit ASAP.
             if ($pagenow != "edit.php" || $post_type != "combination" || $page != "export_combinations") {
                 return;
             }
 
-            // Here we check the actual action
+            // Check the actual action
             $action = $_POST['action'];
             if ($action != "export_combinations_all") {
                 return;
@@ -414,24 +414,76 @@ if (!class_exists('Combination_Manager')) :
             defined('WP_MEMORY_LIMIT') || define('WP_MEMORY_LIMIT', '2048M');
 
             // Query the data that will be exported
+            $rows = [];
+            $query_args = [
+                'post_type' => 'combination',
+                'post_status' => 'publish',
+                'meta_key' => '_combination_id',
+                'orderby' => 'meta_value_num',
+                'order' => 'ASC',
+                'posts_per_page' => -1,
+            ];
+            $posts = get_posts($query_args);
+            foreach ($posts as $post) {
+
+                $combination_id = get_post_meta($post->ID, '_combination_id', true);
+
+                $terms = $this->get_nested_terms($post->ID, 'combination_category');
+
+                $image_png = wp_get_attachment_url(
+                        get_field('combination_png_image', $post->ID)
+                );
+
+                $image_jpg = wp_get_attachment_url(
+                        get_field('combination_jpg_image', $post->ID)
+                );
+
+                $rows[] = [
+                    0 => (int)$combination_id,
+                    1 => $terms[0]->name,
+                    2 => $terms[1]->name,
+                    3 => $terms[2]->name,
+                    4 => $terms[3]->name,
+                    5 => $terms[4]->name,
+                    6 => $terms[5]->name,
+                    7 => $image_png,
+                    8 => $image_jpg,
+                ];
+            }
 
             // Stream the data as a CSV to the browser
             // Based off: https://code.iamkate.com/php/creating-downloadable-csv-files/
             header('Content-Type: text/csv; charset=utf-8');
-            header('Content-Disposition: attachment; filename=data.csv');
+            header('Content-Disposition: attachment; filename=combinations.csv');
             $output = fopen('php://output', 'w');
 
-            fputcsv($output, array('Column 1', 'Column 2', 'Column 3'));
-            $sample_rows = [
-                ["Hello", "this", "is"],
-                ["Hi", "I", "am"],
-                ["Bonjour", "Je", "Suis"],
-            ];
-            foreach ($sample_rows as $row) {
+            // Output the first row
+            fputcsv($output, ['Combination ID','Category Name', 'Collection', 'Model Name', 'Variant', 'Finish', 'Color', 'PNG Image', 'JPG Image']);
+            foreach ($rows as $row) {
                 fputcsv($output, $row);
             }
             fclose($output);
             die(); // Avoid outputting the rest of Wordpress
+        }
+
+        public function get_nested_terms($post_id, $taxonomy)
+        {
+            $terms = get_the_terms($post_id, $taxonomy);
+            $terms_nested = [];
+            $this->recursive_terms($terms, 0, $terms_nested);
+            return $terms_nested;
+        }
+
+        public function recursive_terms($terms, $parent_sought, &$results)
+        {
+            // Get the top level item
+            foreach ($terms as $key => $term) {
+                if ($term->parent === $parent_sought) {
+                    $results[] = $term;
+                    unset($terms[$key]);
+                    $this->recursive_terms($terms, $term->term_id, $results);
+                }
+            }
         }
 
         public function upsert_combination(
